@@ -1,4 +1,4 @@
-# Rainbow-Text-Tool_for_BetterChat
+# Rainbow Text Tool for BetterChat
 
 A simple Rainbow Text Generator designed for BetterChat formatting.
 It converts normal text into rainbow colored chat formatting codes compatible with games that support BetterChat style formatting.
