@@ -1,53 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- fonts isnt included in preview D: -->
 <head>
     <meta charset="UTF-8">
     <title>Rainbow Text Tool</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon.ico">
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f0f0f; color: #e0e0e0; display: flex; justify-content: center; }
         .container { max-width: 750px; width: 100%; background: #181818; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h2 { color: #00ff88; margin-top: 0; text-align: center; letter-spacing: 1px; }
         label { display: block; margin: 15px 0 5px; font-weight: 600; color: #888; font-size: 13px; }
         textarea { width: 100%; height: 80px; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; box-sizing: border-box; font-size: 15px; }
-        select { width: 100%; padding: 10px; border-radius: 6px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; }
-        .options-row { display: flex; align-items: center; margin: 15px 0; background: #222; padding: 10px; border-radius: 6px; border: 1px solid #333; }
-        .options-row input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        select { width: 100%; padding: 10px; border-radius: 6px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; margin-bottom: 5px; }
+        .options-row { display: flex; align-items: center; margin: 15px 0; background: #222; padding: 10px; border-radius: 6px; border: 1px solid #333; justify-content: space-between; }
+        .checkbox-group { display: flex; align-items: center; }
+        .checkbox-group input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        .char-counter { font-size: 12px; font-family: monospace; color: #00ff88; font-weight: bold; }
         .btn { width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 6px; background: #00ff88; color: #000; font-weight: 800; cursor: pointer; font-size: 15px; }
         .btn:hover { background: #00cc6e; }
         
-        /* Fixed Export Code Box */
         #preview { 
-            margin-top: 5px; 
-            padding: 15px; 
-            background: #000; 
-            border-radius: 6px; 
-            font-family: monospace; 
-            font-size: 11px; 
-            color: #888; 
-            border: 1px solid #333; 
-            max-height: 150px; 
-            overflow-y: auto; 
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: normal;
+            margin-top: 5px; padding: 15px; background: #000; border-radius: 6px; font-family: monospace; font-size: 11px; color: #888; border: 1px solid #333; 
+            max-height: 150px; overflow-y: auto; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;
         }
         
         #visual-preview { 
-            margin-top: 5px; 
-            padding: 20px; 
-            background: #111; 
-            border-radius: 6px; 
-            border: 1px solid #444; 
-            min-height: 50px; 
-            font-size: 24px; 
-            font-weight: bold; 
-            text-align: center;
-            letter-spacing: 1px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            margin-top: 5px; padding: 20px; background: #111; border-radius: 6px; border: 1px solid #444; min-height: 50px; 
+            font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 1px; word-wrap: break-word; overflow-wrap: break-word;
+            display: block;
+            white-space: pre-wrap;
         }
 
+        .placeholder { color: #333; font-style: italic; font-size: 18px; }
         .success-msg { color: #00ff88; text-align: center; margin-top: 10px; font-weight: bold; opacity: 0; transition: 0.3s; }
     </style>
 </head>
@@ -60,6 +44,11 @@
     <label>INPUT TEXT</label>
     <textarea id="input" placeholder="Type here..."></textarea>
 
+    <label>CHOOSE FONT (Optional)</label>
+    <select id="font-select">
+        <option value="">No Font</option>
+    </select>
+
     <label>CHOOSE MODE</label>
     <select id="mode">
         <option value="combined">Combined: (#color / [#dark / t])</option>
@@ -69,8 +58,11 @@
     </select>
 
     <div class="options-row">
-        <input type="checkbox" id="compress">
-        <label for="compress" style="margin: 0; cursor: pointer; color: #fff;">Compress Characters (Remove Spaces)</label>
+        <div class="checkbox-group">
+            <input type="checkbox" id="compress">
+            <label for="compress" style="margin: 0; cursor: pointer; color: #fff;">Compress Characters</label>
+        </div>
+        <div class="char-counter">Characters: <span id="char-count">0</span></div>
     </div>
 
     <label>ACTUAL COLOR PREVIEW</label>
@@ -84,11 +76,31 @@
 </div>
 
 <script>
+    const robloxFonts = [
+        "Legacy", "Arial", "ArialBold", "SourceSans", "SourceSansBold", "SourceSansLight", "SourceSansItalic",
+        "Bodoni", "Garamond", "Cartoon", "Code", "Highway", "SciFi", "Arcade", "Fantasy", "Antique",
+        "SourceSansSemibold", "Gotham", "GothamMedium", "GothamBold", "GothamBlack", "AmaticSC", "Bangers",
+        "Creepster", "DenkOne", "Fondamento", "FredokaOne", "GrenzeGotisch", "IndieFlower", "JosefinSans",
+        "Jura", "Kalam", "LuckiestGuy", "Merriweather", "Michroma", "Nunito", "Oswald", "PatrickHand",
+        "PermanentMarker", "Roboto", "RobotoCondensed", "RobotoMono", "Sarpanch", "SpecialElite",
+        "TitilliumWeb", "Ubuntu", "BuilderSans", "BuilderSansMedium", "BuilderSansBold", "BuilderSansExtraBold",
+        "Arimo", "ArimoBold"
+    ];
+
+    const fontDropdown = document.getElementById('font-select');
+    robloxFonts.forEach((font, index) => {
+        let opt = document.createElement('option');
+        opt.value = font;
+        opt.innerHTML = `${index}: ${font}`;
+        fontDropdown.appendChild(opt);
+    });
+
     const input = document.getElementById('input');
     const mode = document.getElementById('mode');
     const compress = document.getElementById('compress');
     const preview = document.getElementById('preview');
     const visualPreview = document.getElementById('visual-preview');
+    const charCount = document.getElementById('char-count');
     const status = document.getElementById('status');
 
     function getColors(i, step) {
@@ -110,11 +122,19 @@
     function generate() {
         const text = input.value;
         const selectedMode = mode.value;
+        const selectedFont = fontDropdown.value;
         const isCompressed = compress.checked;
         let codeResult = "";
         let visualHTML = "";
         let step = 15; 
         const slash = isCompressed ? "/" : " / ";
+
+        if (!text) {
+            visualPreview.innerHTML = '<span class="placeholder">Type something to see preview...</span>';
+            preview.innerText = "";
+            charCount.innerText = "0";
+            return "";
+        }
 
         for (let i = 0; i < text.length; i++) {
             if (text[i] === " ") { 
@@ -123,7 +143,6 @@
                 continue; 
             }
             const { hex, darkHex } = getColors(i, step);
-
             let charStyle = "";
 
             if (selectedMode === "text-only") {
@@ -139,12 +158,18 @@
                 codeResult += `(${hex}${slash}[${darkHex}${slash}${text[i]}])`;
                 charStyle = `color: ${hex}; text-shadow: 2px 2px 0px ${darkHex};`;
             }
-
             visualHTML += `<span style="${charStyle}">${text[i]}</span>`;
+        }
+
+        if (selectedFont !== "") {
+            codeResult = `<${selectedFont}${slash}${codeResult}>`;
         }
 
         preview.innerText = codeResult;
         visualPreview.innerHTML = visualHTML;
+        visualPreview.style.fontFamily = selectedFont ? `"${selectedFont}", sans-serif` : "inherit";
+        charCount.innerText = codeResult.length;
+        charCount.style.color = codeResult.length > 7000 ? "#ff4444" : (codeResult.length > 200 ? "#ffaa00" : "#00ff88");
         return codeResult;
     }
 
@@ -157,8 +182,7 @@
         });
     }
 
-    [input, mode, compress].forEach(el => el.addEventListener('input', generate));
-    [mode, compress].forEach(el => el.addEventListener('change', generate));
+    [input, mode, compress, fontDropdown].forEach(el => el.addEventListener('input', generate));
 </script>
 
 </body>
