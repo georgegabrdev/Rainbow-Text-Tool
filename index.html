@@ -45,7 +45,7 @@
 
 <div class="container">
     <h2>Rainbow Text Tool for BetterChat</h2>
-    <label style="color: #ffaa00; text-align: center;">Character Limit: 200</label>
+    <label style="color: #ffaa00; text-align: center;">Character Limit: 500</label>
     
     <label>INPUT TEXT</label>
     <textarea id="input" placeholder="Type here..."></textarea>
@@ -194,7 +194,7 @@
         visualPreview.innerHTML = visualHTML;
         visualPreview.style.fontFamily = selectedFont ? `"${selectedFont}", sans-serif` : "inherit";
         charCount.innerText = codeResult.length;
-        charCount.style.color = codeResult.length > 200 ? "#ff4444" : (codeResult.length > 100 ? "#ffaa00" : "#00ff88");
+        charCount.style.color = codeResult.length > 500 ? "#ff4444" : (codeResult.length > 250 ? "#ffaa00" : "#00ff88");
         return codeResult;
     }
 
