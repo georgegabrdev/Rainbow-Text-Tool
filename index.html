@@ -168,8 +168,16 @@
         preview.innerText = codeResult;
         visualPreview.innerHTML = visualHTML;
         visualPreview.style.fontFamily = selectedFont ? `"${selectedFont}", sans-serif` : "inherit";
-        charCount.innerText = codeResult.length;
-        charCount.style.color = codeResult.length > 80000 ? "#ff4444" : (codeResult.length > 200 ? "#ffaa00" : "#00ff88");
+        charCount.innerText = codeResult.length.toLocaleString();
+        let length = codeResult.length;
+
+        if (length > 80000) {
+            charCount.style.color = "#ff4444";
+        } else if (length > 200) {
+            charCount.style.color = "#ffaa00";
+        } else {
+            charCount.style.color = "#00ff88";
+        }
         return codeResult;
     }
 
