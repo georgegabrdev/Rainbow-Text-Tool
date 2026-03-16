@@ -12,7 +12,14 @@
         label { display: block; margin: 15px 0 5px; font-weight: 600; color: #888; font-size: 13px; }
         textarea { width: 100%; height: 80px; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; box-sizing: border-box; font-size: 15px; }
         select { width: 100%; padding: 10px; border-radius: 6px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; margin-bottom: 5px; }
+        
         .options-row { display: flex; align-items: center; margin: 15px 0; background: #222; padding: 10px; border-radius: 6px; border: 1px solid #333; justify-content: space-between; }
+        .slider-group { background: #222; padding: 12px; border-radius: 6px; border: 1px solid #333; margin-bottom: 10px; }
+        .slider-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+        .slider-row label { margin: 0; min-width: 80px; }
+        .val-display { min-width: 45px; font-family: monospace; color: #00ff88; font-weight: bold; text-align: right; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; accent-color: #00ff88; }
+        
         .checkbox-group { display: flex; align-items: center; }
         .checkbox-group input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
         .char-counter { font-size: 12px; font-family: monospace; color: #00ff88; font-weight: bold; }
@@ -27,8 +34,7 @@
         #visual-preview { 
             margin-top: 5px; padding: 20px; background: #111; border-radius: 6px; border: 1px solid #444; min-height: 50px; 
             font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 1px; word-wrap: break-word; overflow-wrap: break-word;
-            display: block;
-            white-space: pre-wrap;
+            display: block; white-space: pre-wrap;
         }
 
         .placeholder { color: #333; font-style: italic; font-size: 18px; }
@@ -39,7 +45,7 @@
 
 <div class="container">
     <h2>Rainbow Text Tool for BetterChat</h2>
-    <label style="color: #ffaa00; text-align: center;">Elevator Game 64 Limit: 80,000 | Standard Games: 200</label>
+    <label style="color: #ffaa00; text-align: center;">Character Limit: 200</label>
     
     <label>INPUT TEXT</label>
     <textarea id="input" placeholder="Type here..."></textarea>
@@ -56,6 +62,19 @@
         <option value="outline-only">Outline Color: [#color / t]</option>
         <option value="dark-outline-only">Darker Outline Only: [#dark / t]</option>
     </select>
+
+    <div class="slider-group">
+        <div class="slider-row">
+            <label>Saturation</label>
+            <input type="range" id="saturation" min="0" max="100" value="100">
+            <span class="val-display" id="sat-val">100%</span>
+        </div>
+        <div class="slider-row">
+            <label>Contrast</label>
+            <input type="range" id="contrast" min="10" max="90" value="50">
+            <span class="val-display" id="con-val">50%</span>
+        </div>
+    </div>
 
     <div class="options-row">
         <div class="checkbox-group">
@@ -98,32 +117,36 @@
     const input = document.getElementById('input');
     const mode = document.getElementById('mode');
     const compress = document.getElementById('compress');
+    const saturation = document.getElementById('saturation');
+    const contrast = document.getElementById('contrast');
     const preview = document.getElementById('preview');
     const visualPreview = document.getElementById('visual-preview');
     const charCount = document.getElementById('char-count');
     const status = document.getElementById('status');
+    const satVal = document.getElementById('sat-val');
+    const conVal = document.getElementById('con-val');
 
-    function getColors(i, step) {
-        const h = (i * step) % 360;
-        const s = 100, l = 50;
-        const a = s * Math.min(l / 100, 1 - l / 100) / 100;
+    function hslToHex(h, s, l) {
+        l /= 100;
+        const a = s * Math.min(l, 1 - l) / 100;
         const f = n => {
             const k = (n + h / 30) % 12;
-            const color = (l / 100) - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-            return Math.round(255 * color);
+            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color).toString(16).padStart(2, '0');
         };
-        const r = f(0), g = f(8), b = f(4);
-        const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-        const dr = Math.floor(r / 2.5), dg = Math.floor(g / 2.5), db = Math.floor(b / 2.5);
-        const darkHex = "#" + ((1 << 24) + (dr << 16) + (dg << 8) + db).toString(16).slice(1);
-        return { hex, darkHex };
+        return `#${f(0)}${f(8)}${f(4)}`;
     }
 
     function generate() {
+        satVal.innerText = saturation.value + "%";
+        conVal.innerText = contrast.value + "%";
+
         const text = input.value;
         const selectedMode = mode.value;
         const selectedFont = fontDropdown.value;
         const isCompressed = compress.checked;
+        const sat = parseInt(saturation.value);
+        const con = parseInt(contrast.value);
         let codeResult = "";
         let visualHTML = "";
         let step = 15; 
@@ -142,9 +165,11 @@
                 visualHTML += " ";
                 continue; 
             }
-            const { hex, darkHex } = getColors(i, step);
+            const h = (i * step) % 360;
+            const hex = hslToHex(h, sat, con);
+            const darkHex = hslToHex(h, sat, con / 2.5);
+            
             let charStyle = "";
-
             if (selectedMode === "text-only") {
                 codeResult += `(${hex}${slash}${text[i]})`;
                 charStyle = `color: ${hex};`;
@@ -168,16 +193,8 @@
         preview.innerText = codeResult;
         visualPreview.innerHTML = visualHTML;
         visualPreview.style.fontFamily = selectedFont ? `"${selectedFont}", sans-serif` : "inherit";
-        charCount.innerText = codeResult.length.toLocaleString();
-        let length = codeResult.length;
-
-        if (length > 80000) {
-            charCount.style.color = "#ff4444";
-        } else if (length > 200) {
-            charCount.style.color = "#ffaa00";
-        } else {
-            charCount.style.color = "#00ff88";
-        }
+        charCount.innerText = codeResult.length;
+        charCount.style.color = codeResult.length > 200 ? "#ff4444" : (codeResult.length > 100 ? "#ffaa00" : "#00ff88");
         return codeResult;
     }
 
@@ -190,7 +207,7 @@
         });
     }
 
-    [input, mode, compress, fontDropdown].forEach(el => el.addEventListener('input', generate));
+    [input, mode, compress, fontDropdown, saturation, contrast].forEach(el => el.addEventListener('input', generate));
 </script>
 
 </body>
